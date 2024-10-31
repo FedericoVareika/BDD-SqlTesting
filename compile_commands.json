@@ -1,0 +1,17 @@
+[
+  {
+    "arguments": [
+      "/usr/bin/gcc",
+      "-c",
+      "-O3",
+      "-Wall",
+      "--std=c11",
+      "-o",
+      "crear_estado_tests",
+      "crear_estado_tests.c"
+    ],
+    "directory": "/home/federicovareika/Facultad/BDD/BDD-SqlTesting",
+    "file": "/home/federicovareika/Facultad/BDD/BDD-SqlTesting/crear_estado_tests.c",
+    "output": "/home/federicovareika/Facultad/BDD/BDD-SqlTesting/crear_estado_tests"
+  }
+]

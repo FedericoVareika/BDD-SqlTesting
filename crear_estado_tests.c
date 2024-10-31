@@ -3,15 +3,16 @@
 #include <stdlib.h>
 
 #define ArrayLen(arr) (sizeof((arr)) / sizeof((*arr)))
+#define MAX_DATE 365
+
+typedef enum { false, true } bool;
 
 int random_int(int max, int min) {
-    int dif = max - min;
-    return random() % dif + min;
+  int dif = max - min;
+  return rand() % dif + min;
 }
 
-int random_idx(int len) {
-    return random() % len;
-}
+int random_idx(int len) { return rand() % len; }
 
 char *nombres[] = {
     "Juan",
@@ -159,161 +160,329 @@ char *rango_edad[] = {
 };
 
 typedef struct {
-    int idAsistente;
-    char *nombre;
-    char *genero;
+  int idAsistente;
+  char *nombre;
+  char *genero;
 } Asistente;
 
 typedef struct {
-    int idRol;
-    char *tipo;
+  int idRol;
+  char *tipo;
 } Rol;
 
 typedef struct {
-    int idAsignaRol;
-    int idAsistente;
-    int idRol;
+  int idAsignaRol;
+  int idAsistente;
+  int idRol;
 } AsignaRol;
 
 typedef struct {
-    int idConfiguracion;
-    char *ropa;
-    char *interes;
-    char *rasgo;
-    char *voz;
-    int costoGemas;
-    int costoMonenas;
-    int idAsistente;
-    char vigente;
+  int idConfiguracion;
+  char *ropa;
+  char *interes;
+  char *rasgo;
+  char *voz;
+  int costoGemas;
+  int costoMonenas;
+  int idAsistente;
+  char vigente;
 } Configuracion;
 
 typedef struct {
-    int idUsuario;
-    char *email;
-    char *nombre;
-    char *rangoEdad;
-    char *fechaRegistro;
-    int saldoGemas;
-    int saldoMonedas;
-    int idAsistente;
+  int idUsuario;
+  char *email;
+  char *nombre;
+  char *rangoEdad;
+  int fechaRegistro;
+  int saldoGemas;
+  int saldoMonedas;
+  int idAsistente;
 } Usuario;
 
 typedef struct {
-    int idCompra;
-    int idConfiguracion;
-    char *email;
-    char *fechaCompra;
-    int totalGemas;
-    int totalMonedas;
+  int idCompra;
+  int idConfiguracion;
+  int idUsuario;
+  char *email;
+  int fechaCompra;
+  int totalGemas;
+  int totalMonedas;
 } Compra;
-
-#define Tablas()                                                               \
-    X(Asistente)                                                               \
-    X(Rol)                                                                     \
-    X(AsignaRol)                                                               \
-    X(Configuracion)                                                           \
-    X(Usuario)                                                                 \
-    X(Compra)
 
 #define cantidad(a) cant##a
 #define gen_random(a) random##a
 #define tabla(a) tabla##a
+#define enum_tabla(a) tabla_##a,
+
+typedef enum {
+  tabla_Null,
+#define X(a, ...) tabla_##a,
+#include "tablas.inl"
+  tabla_Count,
+#undef X
+} TablasEnum;
 
 // Random create function declarations
-#define X(a) a random##a(int idx);
-Tablas();
+#define X(a, ...) a gen_random(a)(int idx);
+#include "tablas.inl"
 #undef X
 
-// Global cantidades
-#define X(a) int cantidad(a);
-Tablas();
+// Nombres de tablas lookup
+char *nombres_lookup[] = {
+#define X(a, ...) [tabla_##a] = #a,
+#include "tablas.inl"
+#undef X
+};
+
+// Nombres de valores para insert lookup
+char *nombres_atributos_lookup[tabla_Count] = {
+    [tabla_Asistente] = "(idAsistente, nombre, genero)",
+    [tabla_Rol] = "(idRol, tipo)",
+    [tabla_AsignaRol] = "(idAsistente, idRol)",
+    [tabla_Configuracion] = "(idConfiguracion, ropa, interes, rasgo, voz, "
+                            "costoGemas, costoMonenas, idAsistente, vigente)",
+    [tabla_Usuario] = "(email, nombre, rangoEdad, fechaRegistro, saldoGemas, "
+                      "saldoMonedas, idAsistente)",
+    [tabla_Compra] =
+        "(idConfiguracion, email, fechaCompra, totalGemas, totalMonedas)",
+};
+
+// Cantidades lookup
+int cantidades[tabla_Count] = {};
+
+// Tablas union
+typedef union {
+#define X(a, ...) a *tabla(a);
+#include "tablas.inl"
+#undef X
+} TablasPtrUnion;
+
+// Arrays lookup
+TablasPtrUnion *arrays[tabla_Count] = {};
+
+#define X(a, ...) a *tabla(a);
+#include "tablas.inl"
 #undef X
 
-// Global arrays
-#define X(a) a *tabla(a);
-Tablas();
+#define X(a, ...)                                                              \
+  int get_id##a(int idx) { return arrays[tabla_##a]->tabla##a[idx].id##a; }
+#include "tablas.inl"
 #undef X
 
-#define X(a)                                                                   \
-    int get_id##a(int idx) {                                                   \
-        return tabla(a)[idx].id##a;                                            \
+// Dependencias primarias
+TablasEnum deps[][tabla_Count] = {
+    [tabla_Null] = {},
+#define Y(a) tabla_##a
+#define EMPTY                                                                  \
+  {}
+#define X(a, deps, ...) [tabla_##a] = deps,
+#include "tablas.inl"
+#undef X
+#undef EMPTY
+};
+
+void clampCants() {
+  for (int i = 1; i < tabla_Count; i++) {
+    bool tieneDeps = false;
+    TablasEnum *dep = deps[i];
+    int max_cant = 1;
+    for (int j = 1; j < tabla_Count; j++) {
+      if (dep[j] == tabla_Null)
+        continue;
+      if (dep[j] == tabla_Count) {
+        max_cant *= 10;
+        continue;
+      }
+
+      tieneDeps = true;
+      max_cant *= cantidades[j];
     }
-Tablas();
-#undef X
+
+    if (tieneDeps && max_cant < cantidades[i])
+      cantidades[i] = max_cant;
+  }
+}
 
 Asistente randomAsistente(int idx) {
-    Asistente ret = {
-        .idAsistente = idx,
-        .nombre = nombres[random_idx(ArrayLen(nombres))],
-        .genero = genero[random_idx(ArrayLen(genero))],
-    };
-    return ret;
+  Asistente ret = {
+      .idAsistente = idx,
+      .nombre = nombres[random_idx(ArrayLen(nombres))],
+      .genero = genero[random_idx(ArrayLen(genero))],
+  };
+  return ret;
 }
 
 Rol randomRol(int idx) {
-    Rol ret = {
-        .idRol = idx,
-        .tipo = tipo[random_idx(ArrayLen(tipo))],
-    };
-    return ret;
+  Rol ret = {
+      .idRol = idx,
+      .tipo = tipo[random_idx(ArrayLen(tipo))],
+  };
+  return ret;
 }
 
-AsignaRol randomAsigna(int idx) {
-    AsignaRol ret = {
-        .idAsignaRol = idx,
-        .idRol = get_idRol(random_idx(cantidad(Rol))),
-        .idAsistente = get_idAsistente(random_idx(cantidad(Rol))),
-    };
-    return ret;
+AsignaRol randomAsignaRol(int idx) {
+  AsignaRol ret = {
+      .idAsignaRol = idx,
+  };
+
+  ret.idRol = idx % cantidades[tabla_Rol];
+  idx /= cantidades[tabla_Rol];
+  ret.idAsistente = idx % cantidades[tabla_Asistente];
+  return ret;
 }
 
+Configuracion randomConfiguracion(int idx) {
+  Configuracion ret = {
+      .idConfiguracion = idx,
+      .idAsistente = idx % cantidades[tabla_Asistente],
+      .ropa = ropa[random_idx(ArrayLen(ropa))],
+      .interes = interes[random_idx(ArrayLen(interes))],
+      .voz = voz[random_idx(ArrayLen(voz))],
+      .costoGemas = random_int(1, 0) * random_int(100, 1),
+      .costoMonenas = random_int(1, 0) * random_int(100, 1),
+      .vigente = vigente[random_idx(ArrayLen(vigente))],
+  };
+  return ret;
+}
 
+#include <string.h>
 
+Usuario randomUsuario(int idx) {
+  char *nombre = nombres[random_idx(ArrayLen(nombres))];
+  Usuario ret = {
+      .idUsuario = idx,
+      .idAsistente = idx % cantidades[tabla_Asistente],
+      .nombre = nombre,
+      // se define en el output
+      .email = NULL,
+      .saldoGemas = random_int(1000, 0),
+      .saldoMonedas = random_int(1000, 0),
+  };
+  return ret;
+}
 
+Compra randomCompra(int idx) {
+  Compra ret = {
+      .idCompra = idx,
+      // se define en el output segun el idUsuario
+      .email = NULL,
+      .totalMonedas = random_int(1000, 1),
+      .totalGemas = random_int(1000, 1),
+  };
+
+  ret.idConfiguracion = idx % cantidades[tabla_Configuracion];
+  idx /= cantidades[tabla_Configuracion];
+  // usar dateadd de sql para hacer q fechacompra sea un int
+  ret.fechaCompra = idx % MAX_DATE;
+  idx /= MAX_DATE;
+  ret.idUsuario = idx % cantidades[tabla_Usuario];
+  return ret;
+}
+
+void print_Asistente(FILE *out, Asistente asistente) {
+  fprintf(out, "(%d, '%s', '%s')", asistente.idAsistente, asistente.nombre,
+          asistente.genero);
+}
+
+void print_Rol(FILE *out, Rol rol) {
+  fprintf(out, "(%d, '%s')\n", rol.idRol, rol.tipo);
+}
+
+void print_AsignaRol(FILE *out, AsignaRol asignarol) {
+  fprintf(out, "(%d, %d)\n", asignarol.idAsistente, asignarol.idRol);
+}
+
+void print_Configuracion(FILE *out, Configuracion configuracion) {
+  fprintf(out, "(%d, '%s', '%s', '%s', '%s', %d, %d, %d, %c)",
+          configuracion.idConfiguracion, configuracion.ropa,
+          configuracion.interes, configuracion.voz, configuracion.ropa,
+          configuracion.costoGemas, configuracion.costoMonenas,
+          configuracion.idAsistente, configuracion.vigente);
+}
+
+void print_Usuario(FILE *out, Usuario usuario) {
+  fprintf(
+      out,
+      "('%d%s@gmail.com', '%s', '%s', DATEADD(day, %d, '2023-10-31'), %d, %d, %d)",
+      usuario.idUsuario, usuario.nombre, usuario.nombre, usuario.rangoEdad,
+      usuario.fechaRegistro, usuario.saldoGemas, usuario.saldoMonedas,
+      usuario.idAsistente);
+}
+void print_Compra(FILE *out, Compra compra) {
+  fprintf(out, "(%d, '%d%s@gmail.com', DATEADD(day, %d, '2023-10-31'), %d, %d)",
+          compra.idConfiguracion, compra.idUsuario,
+          arrays[tabla_Usuario]->tablaUsuario[compra.idUsuario].nombre,
+          compra.fechaCompra, compra.totalGemas, compra.totalMonedas);
+}
+
+void imprimirSQL(FILE *out) {
+#define X(a, ...)                                                              \
+  fprintf(out, "INSERT INTO " #a " %s \nVALUES\n",                             \
+          nombres_atributos_lookup[tabla_##a]);                                \
+  for (int i = 0; i < cantidades[tabla_##a]; i++) {                            \
+    a value = arrays[tabla_##a]->tabla##a[i];                                  \
+    print_##a(out, value);                                                     \
+  }                                                                            \
+  fprintf(out, "\n");
+#include "tablas.inl"
+#undef X
+}
 
 #define usage                                                                  \
-    "%s [seed] [filename.sql] \n"                                              \
-    "   [seed] [filename.sql] [max elementos]\n"                               \
-    "   [seed] [filename.sql] [min elementos] [max elementos]\n"
+  "%s [seed] [filename.sql] \n"                                                \
+  "   [seed] [filename.sql] [max elementos]\n"                                 \
+  "   [seed] [filename.sql] [min elementos] [max elementos]\n"
 
 int main(int argc, char **argv) {
-    if (argc < 3) {
-        printf(usage, argv[0]);
-        return 1;
-    }
+  if (argc < 3) {
+    printf(usage, argv[0]);
+    return 1;
+  }
 
-    int seed = atoi(argv[1]);
-    srandom(seed);
+  int seed = atoi(argv[1]);
+  srand(seed);
 
-    FILE *file = fopen(argv[2], "w+");
-    assert(file);
+  FILE *file = fopen(argv[2], "w");
+  assert(file);
 
-    int max_elementos = 1;
-    int min_elementos = 1;
-    if (argc < 4)
-        max_elementos = atoi(argv[3]);
-    else {
-        max_elementos = atoi(argv[4]);
-        min_elementos = atoi(argv[3]);
-    }
+  int max_elementos = 1;
+  int min_elementos = 1;
+  if (argc == 4) {
+    max_elementos = atoi(argv[3]);
+    /* printf("gello\n"); */
+  }
+  else {
+    max_elementos = atoi(argv[4]);
+    min_elementos = atoi(argv[3]);
+  }
 
-    // Init cantidades
-#define X(a) cantidad(a) = random_int(max_elementos, min_elementos);
-    Tablas();
+  // Init cantidades
+#define X(a, ...)                                                              \
+  cantidades[tabla_##a] = random_int(max_elementos, min_elementos);
+#include "tablas.inl"
 #undef X
 
-    // Init tablas
-#define X(a) tabla(a) = malloc(sizeof(a) * cant##a);
-    Tablas();
+  // Asegurar que hay suficientes elementos que pertenezcan a una FK y PK
+  //
+  // Por ejemplo no pueden haber 100 AsignaRol pero 5 Roles y 5 Asistentes
+  // Si esto pasa, hay que clampear el valor de cantAsignaRol
+
+  clampCants();
+
+  // Init tablas
+#define X(a, ...) arrays[tabla_##a] = malloc(sizeof(a) * cantidades[tabla_##a]);
+#include "tablas.inl"
 #undef X
 
-    // Randomizar todos
-#define X(a)                                                                   \
-    for (int i = 0; i < cantidad(a); i++) {                                    \
-        tabla(a)[i] = gen_random(a)(i);                                        \
-    }
-    Tablas();
+  // Randomizar todos
+#define X(a, ...)                                                              \
+  for (int i = 0; i < cantidades[tabla_##a]; i++) {                            \
+    arrays[tabla_##a]->tabla##a[i] = gen_random(a)(i);                         \
+  }
+#include "tablas.inl"
 #undef X
 
-    return 0;
+  imprimirSQL(file);
+
+  return 0;
 }

@@ -16,6 +16,10 @@ int random_idx(int len) {
     return rand() % len;
 }
 
+unsigned int shuffle_idx(int idx) {
+   return (((idx ^ 0xf7f7f7f7) * 0x8364abf7) ^ 0xf00bf00b) * 0xf81bc437;
+}
+
 char *nombres[] = {
     "Juan",
     "José Luis",
@@ -330,9 +334,9 @@ AsignaRol randomAsignaRol(int idx) {
         .idAsignaRol = idx,
     };
 
-    ret.idRol = idx % cantidades[tabla_Rol];
-    idx /= cantidades[tabla_Rol];
-    ret.idAsistente = idx % cantidades[tabla_Asistente];
+    ret.idRol = shuffle_idx(idx) % cantidades[tabla_Rol];
+    /* idx /= cantidades[tabla_Rol]; */
+    ret.idAsistente = shuffle_idx(idx) % cantidades[tabla_Asistente];
     return ret;
 }
 
@@ -374,17 +378,18 @@ Compra randomCompra(int idx) {
     Compra ret = {
         .idCompra = idx,
         // se define en el output segun el idUsuario
+        .idUsuario = random_idx(cantidades[tabla_Usuario]),
         .email = NULL,
         .totalMonedas = random_int(1000, 1),
         .totalGemas = random_int(1000, 1),
     };
 
-    ret.idConfiguracion = idx % cantidades[tabla_Configuracion];
-    idx /= cantidades[tabla_Configuracion];
+    ret.idConfiguracion = shuffle_idx(idx) % cantidades[tabla_Configuracion];
+    /* idx /= cantidades[tabla_Configuracion]; */
     // usar dateadd de sql para hacer q fechacompra sea un int
-    ret.fechaCompra = (idx % (MAX_DATE - 1)) + 1;
-    idx /= MAX_DATE;
-    ret.idUsuario = idx % cantidades[tabla_Usuario];
+    ret.fechaCompra = shuffle_idx(idx) % (MAX_DATE - 1) + 1;
+    /* idx /= MAX_DATE; */
+    /* ret.idUsuario = idx % cantidades[tabla_Usuario]; */
     return ret;
 }
 

@@ -17,7 +17,7 @@ int random_idx(int len) {
 }
 
 unsigned int shuffle_idx(int idx) {
-   return (((idx ^ 0xf7f7f7f7) * 0x8364abf7) ^ 0xf00bf00b) * 0xf81bc437;
+    return (((idx ^ 0xf7f7f7f7) * 0x8364abf7) ^ 0xf00bf00b) * 0xf81bc437;
 }
 
 char *nombres[] = {
@@ -370,7 +370,6 @@ Usuario randomUsuario(int idx) {
         .saldoMonedas = random_int(1000, 0),
     };
 
-
     return ret;
 }
 
@@ -427,26 +426,28 @@ void print_Usuario(FILE *out, Usuario usuario) {
 void print_Compra(FILE *out, Compra compra) {
     int dia = compra.fechaCompra % 28 + 1;
     int mes = (compra.fechaCompra / 30) % 12 + 1;
-    fprintf(out,
-            "(%d, '%d%s@gmail.com', Date '2024-%d-%d', %d, %d)",
+    fprintf(out, "(%d, '%d%s@gmail.com', Date '2024-%d-%d', %d, %d)",
             compra.idConfiguracion, compra.idUsuario,
-            arrays[tabla_Usuario].tablaUsuario[compra.idUsuario].nombre,
-            mes, dia, compra.totalGemas, compra.totalMonedas);
+            arrays[tabla_Usuario].tablaUsuario[compra.idUsuario].nombre, mes,
+            dia, compra.totalGemas, compra.totalMonedas);
 }
 
-/* fprintf(out, "INSERT INTO " #a " %s \nVALUES", \ */
-/* nombres_atributos_lookup[tabla_##a]);                              \ */
+/* fprintf(out, "INSERT INTO " #a " %s \nVALUES",                         \ */
+/*         nombres_atributos_lookup[tabla_##a]);                          \ */
 void imprimirSQL(FILE *out) {
 #define X(a, ...)                                                              \
+    fprintf(out, "INSERT ALL\n");                                              \
     for (int i = 0; i < cantidades[tabla_##a]; i++) {                          \
-        fprintf(out, "INSERT INTO " #a " %s VALUES ",                          \
+        fprintf(out, "INTO " #a " %s VALUES ",                                 \
                 nombres_atributos_lookup[tabla_##a]);                          \
         a value = arrays[tabla_##a].tabla##a[i];                               \
         print_##a(out, value);                                                 \
-        fprintf(out, ";\n");                                                   \
+        fprintf(out, "SELECT 1 FROM DUAL;\n");                                 \
     }
 #include "tablas.inl"
 #undef X
+    /* fprintf(out, ";\n"); \ */
+    /* fprintf(out, "\n"); \ */
 }
 
 #define usage                                                                  \

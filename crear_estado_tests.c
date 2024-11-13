@@ -391,20 +391,20 @@ Compra randomCompra(int idx) {
 }
 
 void print_Asistente(FILE *out, Asistente asistente) {
-  fprintf(out, "(%d, '%s', '%s')", asistente.idAsistente, asistente.nombre,
+  fprintf(out, "%d,'%s','%s'", asistente.idAsistente, asistente.nombre,
           asistente.genero);
 }
 
 void print_Rol(FILE *out, Rol rol) {
-  fprintf(out, "(%d, '%s')", rol.idRol, rol.tipo);
+  fprintf(out, "%d,'%s'", rol.idRol, rol.tipo);
 }
 
 void print_AsignaRol(FILE *out, AsignaRol asignarol) {
-  fprintf(out, "(%d, %d)", asignarol.idAsistente, asignarol.idRol);
+  fprintf(out, "%d,%d", asignarol.idAsistente, asignarol.idRol);
 }
 
 void print_Configuracion(FILE *out, Configuracion configuracion) {
-  fprintf(out, "(%d, '%s', '%s', '%s', '%s', %d, %d, %d, '%c')",
+  fprintf(out, "%d,'%s','%s','%s','%s',%d,%d,%d,'%c'",
           configuracion.idConfiguracion, configuracion.ropa,
           configuracion.interes, configuracion.rasgo, configuracion.voz,
           configuracion.costoGemas, configuracion.costoMonenas,
@@ -415,18 +415,19 @@ void print_Usuario(FILE *out, Usuario usuario) {
   int dia = usuario.fechaRegistro % 28 + 1;
   int mes = (usuario.fechaRegistro / 30) % 12 + 1;
   fprintf(out,
-          "('%d%s@gmail.com', '%s', '%s', Date '2024-%d-%d', "
-          "%d, %d, %d)",
+          "'%d%s@gmail.com','%s','%s','%d/%d/2024',"
+          "%d,%d,%d",
           usuario.idUsuario, usuario.nombre, usuario.nombre, usuario.rangoEdad,
-          mes, dia, usuario.saldoGemas, usuario.saldoMonedas,
+          dia, mes, usuario.saldoGemas, usuario.saldoMonedas,
           usuario.idAsistente);
 }
+
 void print_Compra(FILE *out, Compra compra) {
   int dia = compra.fechaCompra % 28 + 1;
   int mes = (compra.fechaCompra / 30) % 12 + 1;
-  fprintf(out, "(%d, '%d%s@gmail.com', Date '2024-%d-%d', %d, %d)",
+  fprintf(out, "%d,'%d%s@gmail.com','%d/%d/2024',%d,%d",
           compra.idConfiguracion, compra.idUsuario,
-          arrays[tabla_Usuario].tablaUsuario[compra.idUsuario].nombre, mes, dia,
+          arrays[tabla_Usuario].tablaUsuario[compra.idUsuario].nombre, dia, mes,
           compra.totalGemas, compra.totalMonedas);
 }
 
@@ -449,9 +450,9 @@ void imprimirSQL(FILE *out) {
 }
 
 #define usage                                                                  \
-  "%s [seed] [filename.sql] \n"                                                \
-  "   [seed] [filename.sql] [max elementos]\n"                                 \
-  "   [seed] [filename.sql] [min elementos] [max elementos]\n"
+  "%s [seed] [dirname] \n"                                                     \
+  "   [seed] [dirname] [max elementos]\n"                                      \
+  "   [seed] [dirname] [min elementos] [max elementos]\n"
 
 int main(int argc, char **argv) {
   if (argc < 3) {
@@ -462,8 +463,14 @@ int main(int argc, char **argv) {
   int seed = atoi(argv[1]);
   srand(seed);
 
-  FILE *file = fopen(argv[2], "w");
-  assert(file);
+#define X(a, ...)                                                              \
+  FILE *csv_##a = fopen("res/" #a ".csv", "w");                                \
+  assert(csv_##a);
+#include "tablas.inl"
+#undef X
+
+  /* FILE *file = fopen(argv[2], "w"); */
+  /* assert(file); */
 
   int max_elementos = 1;
   int min_elementos = 1;
@@ -501,7 +508,14 @@ int main(int argc, char **argv) {
 #include "tablas.inl"
 #undef X
 
-  imprimirSQL(file);
+#define X(a, ...)                                                              \
+  for (int i = 0; i < cantidades[tabla_##a]; i++) {                            \
+    a value = arrays[tabla_##a].tabla##a[i];                                   \
+    print_##a(csv_##a, value);                                                 \
+    fprintf(csv_##a, "\n");                                                    \
+  }
+#include "tablas.inl"
+#undef X
 
   return 0;
 }

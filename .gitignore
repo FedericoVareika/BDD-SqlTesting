@@ -1,4 +1,5 @@
 *.sql
 .cache
 res/*.csv
+res/inserts.sql
 crear_estado_tests

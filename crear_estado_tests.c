@@ -5,18 +5,25 @@
 #define ArrayLen(arr) (sizeof((arr)) / sizeof((*arr)))
 #define MAX_DATE 365
 
+#ifdef _WIN32
+#define PATH_SEPARATOR "\\"
+#else
+#define PATH_SEPARATOR "/"
+#endif
+
 typedef enum { false, true } bool;
+typedef enum { err, csv, sql } res_format;
 
 int random_int(int max, int min) {
-  int dif = max - min;
-  return rand() % dif + min;
+    int dif = max - min;
+    return rand() % dif + min;
 }
 
 int random_idx(int len) { return rand() % len; }
 
 unsigned int shuffle_idx(int idx) {
-  int ret = (((idx ^ 0xf7f7f7f7) * 0x8364abf7) ^ 0xf00bf00b) * 0xf81bc437;
-  return ret;
+    int ret = (((idx ^ 0xf7f7f7f7) * 0x8364abf7) ^ 0xf00bf00b) * 0xf81bc437;
+    return ret;
 }
 
 char *nombres[] = {
@@ -165,53 +172,53 @@ char *rango_edad[] = {
 };
 
 typedef struct {
-  int idAsistente;
-  char *nombre;
-  char *genero;
+    int idAsistente;
+    char *nombre;
+    char *genero;
 } Asistente;
 
 typedef struct {
-  int idRol;
-  char *tipo;
+    int idRol;
+    char *tipo;
 } Rol;
 
 typedef struct {
-  int idAsignaRol;
-  int idAsistente;
-  int idRol;
+    int idAsignaRol;
+    int idAsistente;
+    int idRol;
 } AsignaRol;
 
 typedef struct {
-  int idConfiguracion;
-  char *ropa;
-  char *interes;
-  char *rasgo;
-  char *voz;
-  int costoGemas;
-  int costoMonenas;
-  int idAsistente;
-  char vigente;
+    int idConfiguracion;
+    char *ropa;
+    char *interes;
+    char *rasgo;
+    char *voz;
+    int costoGemas;
+    int costoMonenas;
+    int idAsistente;
+    char vigente;
 } Configuracion;
 
 typedef struct {
-  int idUsuario;
-  char *email;
-  char *nombre;
-  char *rangoEdad;
-  int fechaRegistro;
-  int saldoGemas;
-  int saldoMonedas;
-  int idAsistente;
+    int idUsuario;
+    char *email;
+    char *nombre;
+    char *rangoEdad;
+    int fechaRegistro;
+    int saldoGemas;
+    int saldoMonedas;
+    int idAsistente;
 } Usuario;
 
 typedef struct {
-  int idCompra;
-  int idConfiguracion;
-  int idUsuario;
-  char *email;
-  int fechaCompra;
-  int totalGemas;
-  int totalMonedas;
+    int idCompra;
+    int idConfiguracion;
+    int idUsuario;
+    char *email;
+    int fechaCompra;
+    int totalGemas;
+    int totalMonedas;
 } Compra;
 
 #define cantidad(a) cant##a
@@ -220,10 +227,10 @@ typedef struct {
 #define enum_tabla(a) tabla_##a,
 
 typedef enum {
-  tabla_Null,
+    tabla_Null,
 #define X(a, ...) tabla_##a,
 #include "tablas.inl"
-  tabla_Count,
+    tabla_Count,
 #undef X
 } TablasEnum;
 
@@ -270,7 +277,7 @@ TablasPtrUnion arrays[tabla_Count] = {};
 #undef X
 
 #define X(a, ...)                                                              \
-  int get_id##a(int idx) { return arrays[tabla_##a].tabla##a[idx].id##a; }
+    int get_id##a(int idx) { return arrays[tabla_##a].tabla##a[idx].id##a; }
 #include "tablas.inl"
 #undef X
 
@@ -279,7 +286,7 @@ TablasEnum deps[][tabla_Count] = {
     [tabla_Null] = {},
 #define Y(a) tabla_##a
 #define EMPTY                                                                  \
-  {}
+    {}
 #define X(a, deps, ...) [tabla_##a] = deps,
 #include "tablas.inl"
 #undef X
@@ -287,235 +294,277 @@ TablasEnum deps[][tabla_Count] = {
 };
 
 void clampCants() {
-  for (int i = 1; i < tabla_Count; i++) {
-    bool tieneDeps = false;
-    TablasEnum *dep = deps[i];
-    int max_cant = 1;
-    for (int j = 1; j < tabla_Count; j++) {
-      if (dep[j] == tabla_Null)
-        continue;
-      if (dep[j] == tabla_Count) {
-        max_cant *= 10;
-        continue;
-      }
+    for (int i = 1; i < tabla_Count; i++) {
+        bool tieneDeps = false;
+        TablasEnum *dep = deps[i];
+        int max_cant = 1;
+        for (int j = 1; j < tabla_Count; j++) {
+            if (dep[j] == tabla_Null)
+                continue;
+            if (dep[j] == tabla_Count) {
+                max_cant *= 10;
+                continue;
+            }
 
-      tieneDeps = true;
-      max_cant *= cantidades[j];
+            tieneDeps = true;
+            max_cant *= cantidades[j];
+        }
+
+        if (tieneDeps && max_cant < cantidades[i])
+            cantidades[i] = max_cant;
     }
-
-    if (tieneDeps && max_cant < cantidades[i])
-      cantidades[i] = max_cant;
-  }
 }
 
 Asistente randomAsistente(int idx) {
-  Asistente ret = {
-      .idAsistente = idx,
-      .nombre = nombres[random_idx(ArrayLen(nombres))],
-      .genero = genero[random_idx(ArrayLen(genero))],
-  };
-  return ret;
+    Asistente ret = {
+        .idAsistente = idx,
+        .nombre = nombres[random_idx(ArrayLen(nombres))],
+        .genero = genero[random_idx(ArrayLen(genero))],
+    };
+    return ret;
 }
 
 Rol randomRol(int idx) {
-  Rol ret = {
-      .idRol = idx,
-      .tipo = tipo[random_idx(ArrayLen(tipo))],
-  };
-  return ret;
+    Rol ret = {
+        .idRol = idx,
+        .tipo = tipo[random_idx(ArrayLen(tipo))],
+    };
+    return ret;
 }
 
 AsignaRol randomAsignaRol(int idx) {
-  AsignaRol ret = {
-      .idAsignaRol = idx,
-  };
+    AsignaRol ret = {
+        .idAsignaRol = idx,
+    };
 
-  ret.idRol = shuffle_idx(idx) % cantidades[tabla_Rol];
-  ret.idAsistente = shuffle_idx(idx) % cantidades[tabla_Asistente];
-  return ret;
+    ret.idRol = shuffle_idx(idx) % cantidades[tabla_Rol];
+    ret.idAsistente = shuffle_idx(idx) % cantidades[tabla_Asistente];
+    return ret;
 }
 
 Configuracion randomConfiguracion(int idx) {
-  Configuracion ret = {
-      .idConfiguracion = idx,
-      .idAsistente = idx % cantidades[tabla_Asistente],
-      .ropa = ropa[random_idx(ArrayLen(ropa))],
-      .interes = interes[random_idx(ArrayLen(interes))],
-      .voz = voz[random_idx(ArrayLen(voz))],
-      .rasgo = rasgo[random_idx(ArrayLen(rasgo))],
-      .costoGemas = random_int(100, 0),
-      .costoMonenas = random_int(100, 0),
-      .vigente = vigente[random_idx(ArrayLen(vigente))],
-  };
-  return ret;
+    Configuracion ret = {
+        .idConfiguracion = idx,
+        .idAsistente = idx % cantidades[tabla_Asistente],
+        .ropa = ropa[random_idx(ArrayLen(ropa))],
+        .interes = interes[random_idx(ArrayLen(interes))],
+        .voz = voz[random_idx(ArrayLen(voz))],
+        .rasgo = rasgo[random_idx(ArrayLen(rasgo))],
+        .costoGemas = random_int(1000, 0),
+        .costoMonenas = random_int(1000, 0),
+        .vigente = vigente[random_idx(ArrayLen(vigente))],
+    };
+    return ret;
 }
 
 #include <string.h>
 
 Usuario randomUsuario(int idx) {
-  char *nombre = nombres[random_idx(ArrayLen(nombres))];
-  Usuario ret = {
-      .idUsuario = idx,
-      .idAsistente = idx % cantidades[tabla_Asistente],
-      .nombre = nombre,
-      .rangoEdad = rango_edad[random_idx(ArrayLen(rango_edad))],
-      // se define en el output
-      .email = NULL,
-      .saldoGemas = random_int(1000, 0),
-      .saldoMonedas = random_int(1000, 0),
-  };
+    char *nombre = nombres[random_idx(ArrayLen(nombres))];
+    Usuario ret = {
+        .idUsuario = idx,
+        .idAsistente = idx % cantidades[tabla_Asistente],
+        .nombre = nombre,
+        .rangoEdad = rango_edad[random_idx(ArrayLen(rango_edad))],
+        // se define en el output
+        .email = NULL,
+        .saldoGemas = random_int(1000, 0),
+        .saldoMonedas = random_int(1000, 0),
+    };
 
-  ret.fechaRegistro = shuffle_idx(idx) % MAX_DATE;
-  return ret;
+    ret.fechaRegistro = shuffle_idx(idx) % MAX_DATE;
+    return ret;
 }
 
 Compra randomCompra(int idx) {
-  Compra ret = {
-      .idCompra = idx,
-      // se define en el output segun el idUsuario
-      /* .idUsuario = random_idx(cantidades[tabla_Usuario]), */
-      .email = NULL,
-      .totalMonedas = random_int(1000, 1),
-      .totalGemas = random_int(1000, 1),
-  };
+    Compra ret = {
+        .idCompra = idx,
+        // se define en el output segun el idUsuario
+        /* .idUsuario = random_idx(cantidades[tabla_Usuario]), */
+        .email = NULL,
+        .totalMonedas = random_int(1000, 1),
+        .totalGemas = random_int(1000, 1),
+    };
 
-  ret.idConfiguracion = shuffle_idx(idx) % cantidades[tabla_Configuracion];
-  ret.idUsuario = shuffle_idx(idx) % cantidades[tabla_Usuario];
+    ret.idConfiguracion = shuffle_idx(idx) % cantidades[tabla_Configuracion];
+    ret.idUsuario = shuffle_idx(idx) % cantidades[tabla_Usuario];
 
-  /* idx /= cantidades[tabla_Configuracion]; */
-  // usar dateadd de sql para hacer q fechacompra sea un int
-  ret.fechaCompra = shuffle_idx(idx) % (MAX_DATE - 1) + 1;
-  /* idx /= MAX_DATE; */
-  /* ret.idUsuario = idx % cantidades[tabla_Usuario]; */
-  return ret;
+    /* idx /= cantidades[tabla_Configuracion]; */
+    // usar dateadd de sql para hacer q fechacompra sea un int
+    ret.fechaCompra = shuffle_idx(idx) % (MAX_DATE - 1) + 1;
+    /* idx /= MAX_DATE; */
+    /* ret.idUsuario = idx % cantidades[tabla_Usuario]; */
+    return ret;
 }
 
 void print_Asistente(FILE *out, Asistente asistente) {
-  fprintf(out, "%d,'%s','%s'", asistente.idAsistente, asistente.nombre,
-          asistente.genero);
+    fprintf(out, "%d,'%s','%s'", asistente.idAsistente, asistente.nombre,
+            asistente.genero);
 }
 
 void print_Rol(FILE *out, Rol rol) {
-  fprintf(out, "%d,'%s'", rol.idRol, rol.tipo);
+    fprintf(out, "%d,'%s'", rol.idRol, rol.tipo);
 }
 
 void print_AsignaRol(FILE *out, AsignaRol asignarol) {
-  fprintf(out, "%d,%d", asignarol.idAsistente, asignarol.idRol);
+    fprintf(out, "%d,%d", asignarol.idAsistente, asignarol.idRol);
 }
 
 void print_Configuracion(FILE *out, Configuracion configuracion) {
-  fprintf(out, "%d,'%s','%s','%s','%s',%d,%d,%d,'%c'",
-          configuracion.idConfiguracion, configuracion.ropa,
-          configuracion.interes, configuracion.rasgo, configuracion.voz,
-          configuracion.costoGemas, configuracion.costoMonenas,
-          configuracion.idAsistente, configuracion.vigente);
+    fprintf(out, "%d,'%s','%s','%s','%s',%d,%d,%d,'%c'",
+            configuracion.idConfiguracion, configuracion.ropa,
+            configuracion.interes, configuracion.rasgo, configuracion.voz,
+            configuracion.costoGemas, configuracion.costoMonenas,
+            configuracion.idAsistente, configuracion.vigente);
 }
 
 void print_Usuario(FILE *out, Usuario usuario) {
-  int dia = usuario.fechaRegistro % 28 + 1;
-  int mes = (usuario.fechaRegistro / 30) % 12 + 1;
-  fprintf(out,
-          "'%d%s@gmail.com','%s','%s','%d/%d/2024',"
-          "%d,%d,%d",
-          usuario.idUsuario, usuario.nombre, usuario.nombre, usuario.rangoEdad,
-          dia, mes, usuario.saldoGemas, usuario.saldoMonedas,
-          usuario.idAsistente);
+    int dia = usuario.fechaRegistro % 28 + 1;
+    int mes = (usuario.fechaRegistro / 30) % 12 + 1;
+    fprintf(out,
+            "'%d%s@gmail.com','%s','%s','%d/%d/2024',"
+            "%d,%d,%d",
+            usuario.idUsuario, usuario.nombre, usuario.nombre,
+            usuario.rangoEdad, dia, mes, usuario.saldoGemas,
+            usuario.saldoMonedas, usuario.idAsistente);
 }
 
 void print_Compra(FILE *out, Compra compra) {
-  int dia = compra.fechaCompra % 28 + 1;
-  int mes = (compra.fechaCompra / 30) % 12 + 1;
-  fprintf(out, "%d,'%d%s@gmail.com','%d/%d/2024',%d,%d",
-          compra.idConfiguracion, compra.idUsuario,
-          arrays[tabla_Usuario].tablaUsuario[compra.idUsuario].nombre, dia, mes,
-          compra.totalGemas, compra.totalMonedas);
+    int dia = compra.fechaCompra % 28 + 1;
+    int mes = (compra.fechaCompra / 30) % 12 + 1;
+    fprintf(out, "%d,'%d%s@gmail.com','%d/%d/2024',%d,%d",
+            compra.idConfiguracion, compra.idUsuario,
+            arrays[tabla_Usuario].tablaUsuario[compra.idUsuario].nombre, dia,
+            mes, compra.totalGemas, compra.totalMonedas);
 }
 
 /* fprintf(out, "INSERT INTO " #a " %s \nVALUES",                         \ */
 /*         nombres_atributos_lookup[tabla_##a]);                          \ */
 void imprimirSQL(FILE *out) {
 #define X(a, ...)                                                              \
-  fprintf(out, "INSERT ALL\n");                                                \
-  for (int i = 0; i < cantidades[tabla_##a]; i++) {                            \
-    fprintf(out, "INTO " #a " %s VALUES ",                                     \
-            nombres_atributos_lookup[tabla_##a]);                              \
-    a value = arrays[tabla_##a].tabla##a[i];                                   \
-    print_##a(out, value);                                                     \
-    fprintf(out, "\n");                                                        \
-  }                                                                            \
-  fprintf(out, "SELECT 1 FROM DUAL;\n");
+    fprintf(out, "INSERT ALL\n");                                              \
+    for (int i = 0; i < cantidades[tabla_##a]; i++) {                          \
+        fprintf(out, "INTO " #a " %s VALUES ",                                 \
+                nombres_atributos_lookup[tabla_##a]);                          \
+        a value = arrays[tabla_##a].tabla##a[i];                               \
+        fprintf(out, "(");                                                     \
+        print_##a(out, value);                                                 \
+        fprintf(out, ")\n");                                                   \
+    }                                                                          \
+    fprintf(out, "SELECT 1 FROM DUAL;\n");
 #include "tablas.inl"
 #undef X
-  /* fprintf(out, ";\n"); \ */
+    /* fprintf(out, ";\n"); \ */
 }
 
 #define usage                                                                  \
-  "%s [seed] [dirname] \n"                                                     \
-  "   [seed] [dirname] [max elementos]\n"                                      \
-  "   [seed] [dirname] [min elementos] [max elementos]\n"
+    "%s [seed] [sql/csv] \n"                                                   \
+    "%s [seed] [sql/csv] [max elementos]\n"                                    \
+    "%s [seed] [sql/csv] [min elementos] [max elementos]\n"
+
+#define print_usage(name)                                                      \
+    printf("%s [seed] [sql/csv] \n"                                            \
+           "%s [seed] [sql/csv] [max elementos]\n"                             \
+           "%s [seed] [sql/csv] [min elementos] [max elementos]\n",            \
+           name, name, name)
 
 int main(int argc, char **argv) {
-  if (argc < 3) {
-    printf(usage, argv[0]);
-    return 1;
-  }
+    if (argc < 3) {
+        print_usage(argv[0]);
+        return 1;
+    }
 
-  int seed = atoi(argv[1]);
-  srand(seed);
+    int seed = atoi(argv[1]);
+    srand(seed);
 
+    res_format format = err;
+
+    if (!strcmp(argv[2], "sql"))
+        format = sql;
+    else if (!strcmp(argv[2], "csv"))
+        format = csv;
+
+    // SQL
+    FILE *res;
+
+    // CSV
+#define X(a, ...) FILE *res_##a;
+#include "tablas.inl"
+
+    switch (format) {
+    case sql: {
+        res = fopen("res" PATH_SEPARATOR "inserts.sql", "wb");
+        assert(res);
+    } break;
+    case csv: {
 #define X(a, ...)                                                              \
-  FILE *csv_##a = fopen("res/" #a ".csv", "w");                                \
-  assert(csv_##a);
+    res_##a = fopen("res" PATH_SEPARATOR #a ".csv", "wb");                     \
+    assert(res_##a);
+#include "tablas.inl"
+#undef X
+    } break;
+    case err:
+        printf(
+            "ERROR: The script type should be 'sql' or 'csv' exclusively:\n");
+        print_usage(argv[0]);
+        return 1;
+    }
+
+    int max_elementos = 1;
+    int min_elementos = 1;
+    if (argc == 4) {
+        max_elementos = atoi(argv[3]);
+    } else {
+        max_elementos = atoi(argv[4]);
+        min_elementos = atoi(argv[3]);
+    }
+
+    // Init cantidades
+#define X(a, ...)                                                              \
+    cantidades[tabla_##a] = random_int(max_elementos, min_elementos);
 #include "tablas.inl"
 #undef X
 
-  /* FILE *file = fopen(argv[2], "w"); */
-  /* assert(file); */
+    // Asegurar que hay suficientes elementos que pertenezcan a una FK y PK
+    //
+    // Por ejemplo no pueden haber 100 AsignaRol pero 5 Roles y 5 Asistentes
+    // Si esto pasa, hay que clampear el valor de cantAsignaRol
 
-  int max_elementos = 1;
-  int min_elementos = 1;
-  if (argc == 4) {
-    max_elementos = atoi(argv[3]);
-  } else {
-    max_elementos = atoi(argv[4]);
-    min_elementos = atoi(argv[3]);
-  }
+    clampCants();
 
-  // Init cantidades
+    // Init tablas
 #define X(a, ...)                                                              \
-  cantidades[tabla_##a] = random_int(max_elementos, min_elementos);
+    arrays[tabla_##a].tabla##a = malloc(sizeof(a) * cantidades[tabla_##a]);
 #include "tablas.inl"
 #undef X
 
-  // Asegurar que hay suficientes elementos que pertenezcan a una FK y PK
-  //
-  // Por ejemplo no pueden haber 100 AsignaRol pero 5 Roles y 5 Asistentes
-  // Si esto pasa, hay que clampear el valor de cantAsignaRol
-
-  clampCants();
-
-  // Init tablas
+    // Randomizar todos
 #define X(a, ...)                                                              \
-  arrays[tabla_##a].tabla##a = malloc(sizeof(a) * cantidades[tabla_##a]);
+    for (int i = 0; i < cantidades[tabla_##a]; i++) {                          \
+        arrays[tabla_##a].tabla##a[i] = gen_random(a)(i);                      \
+    }
 #include "tablas.inl"
 #undef X
 
-  // Randomizar todos
+    switch (format) {
+    case sql: {
+        imprimirSQL(res);
+    } break;
+    case csv: {
 #define X(a, ...)                                                              \
-  for (int i = 0; i < cantidades[tabla_##a]; i++) {                            \
-    arrays[tabla_##a].tabla##a[i] = gen_random(a)(i);                          \
-  }
+    for (int i = 0; i < cantidades[tabla_##a]; i++) {                          \
+        a value = arrays[tabla_##a].tabla##a[i];                               \
+        print_##a(res_##a, value);                                             \
+        fprintf(res_##a, "\n");                                                \
+    }
 #include "tablas.inl"
 #undef X
+    } break;
+    case err:
+        fprintf(stderr, "CRITICAL ERROR: \n--The type of result is 'err' but "
+                        "that should have been previously resolved--\n");
+        return 1;
+    }
 
-#define X(a, ...)                                                              \
-  for (int i = 0; i < cantidades[tabla_##a]; i++) {                            \
-    a value = arrays[tabla_##a].tabla##a[i];                                   \
-    print_##a(csv_##a, value);                                                 \
-    fprintf(csv_##a, "\n");                                                    \
-  }
-#include "tablas.inl"
-#undef X
-
-  return 0;
+    return 0;
 }

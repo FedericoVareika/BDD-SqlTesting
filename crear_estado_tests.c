@@ -459,17 +459,32 @@ void imprimirSQL(FILE *out) {
 
 #define usage                                                                  \
     "%s [seed] [sql/csv] \n"                                                   \
-    "%s [seed] [sql/csv] [max elementos]\n"                                    \
-    "%s [seed] [sql/csv] [min elementos] [max elementos]\n"
+    "%s [seed] [sql/csv] [max elements]\n"                                     \
+    "%s [seed] [sql/csv] [min elements] [max elements]\n"
 
 #define print_usage(name)                                                      \
     printf("%s [seed] [sql/csv] \n"                                            \
-           "%s [seed] [sql/csv] [max elementos]\n"                             \
-           "%s [seed] [sql/csv] [min elementos] [max elementos]\n",            \
+           "%s [seed] [sql/csv] [max elements]\n"                              \
+           "%s [seed] [sql/csv] [min elements] [max elements]\n",              \
            name, name, name)
+
+bool is_number(char *str) {
+    while (str && *str) {
+        if (*str > '9' || *str < '0')
+            return false;
+        str++;
+    }
+    return true;
+}
 
 int main(int argc, char **argv) {
     if (argc < 3) {
+        print_usage(argv[0]);
+        return 1;
+    }
+
+    if (!is_number(argv[1])) {
+        printf("ERROR: The seed must be a valid integer\n");
         print_usage(argv[0]);
         return 1;
     }
@@ -510,11 +525,22 @@ int main(int argc, char **argv) {
         return 1;
     }
 
+    if (!is_number(argv[3])) {
+        printf("ERROR: The amount of elements should be a valid integer\n");
+        print_usage(argv[0]);
+        return 1;
+    }
+
     int max_elementos = 1;
     int min_elementos = 1;
     if (argc == 4) {
         max_elementos = atoi(argv[3]);
     } else {
+        if (!is_number(argv[4])) {
+            printf("ERROR: The amount of elements should be a valid integer\n");
+            print_usage(argv[0]);
+            return 1;
+        }
         max_elementos = atoi(argv[4]);
         min_elementos = atoi(argv[3]);
     }

@@ -1,2 +1,4 @@
 *.sql
 .cache
+res/*.csv
+crear_estado_tests

@@ -343,8 +343,8 @@ Configuracion randomConfiguracion(int idx) {
       .interes = interes[random_idx(ArrayLen(interes))],
       .voz = voz[random_idx(ArrayLen(voz))],
       .rasgo = rasgo[random_idx(ArrayLen(rasgo))],
-      .costoGemas = random_int(1, 0) * random_int(100, 1),
-      .costoMonenas = random_int(1, 0) * random_int(100, 1),
+      .costoGemas = random_int(100, 0),
+      .costoMonenas = random_int(100, 0),
       .vigente = vigente[random_idx(ArrayLen(vigente))],
   };
   return ret;

@@ -45,7 +45,7 @@ Basicamente es extremadamente rapido, por ejemplo cargar el resultado del la sig
 ./crear_estado_tests 101 csv 100000 150000
 ```
 
-El cual devolvio aproximadamente 740.000 datos para insertar, demoro aproximadamente 30 segundos (incluyendo el tiempo para correr el ddl.sql y typear `exit` para salir de sqlplus): 
+El cual devolvio aproximadamente 740.000 datos para insertar, demoro aproximadamente 30 segundos (incluyendo el tiempo para correr el ddl.sql y typear `quit` para salir de sqlplus): 
 
 ```bash
 real    0m26.245s
@@ -53,4 +53,4 @@ user    0m0.823s
 sys     0m0.268s
 ```
 
-Por el otro lado, los inserts los tuve que parar a los 10 minutos ya que no se lograron insertar los primeros 100.000 datos en ese tiempo. 
+Por el otro lado, los inserts los tuve que parar a los 5 minutos ya que no se lograron insertar los primeros 100.000 datos en ese tiempo. 
